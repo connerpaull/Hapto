@@ -1,0 +1,263 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 5% 15%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 5% 15%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4% 46%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 25%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5% 25%;
+    --input: 240 5% 25%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+}
+
+@layer components {
+  .timeline-ruler {
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent,
+      transparent 9px,
+      hsl(var(--border)) 9px,
+      hsl(var(--border)) 10px
+    );
+  }
+  
+  /* Professional Cue Block Styling */
+  .cue-block {
+    @apply rounded-sm relative overflow-hidden transition-all duration-150;
+    min-width: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .cue-block:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  .cue-block.selected {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    z-index: 20;
+  }
+  
+  .cue-block.multi-selected {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    z-index: 10;
+  }
+  
+  /* Professional Selection States */
+  .cue-block.selected .resize-handle {
+    @apply bg-blue-500/20;
+  }
+  
+  .cue-block.multi-selected .resize-handle {
+    @apply bg-orange-500/20;
+  }
+  
+  /* Professional Track Styling */
+  .timeline-track {
+    transition: background-color 0.2s ease;
+  }
+  
+  .timeline-track:hover {
+    background-color: hsl(var(--muted) / 0.1);
+  }
+  
+  /* Professional Marquee Selection */
+  .marquee-selection {
+    border: 2px solid hsl(var(--primary));
+    background: hsl(var(--primary) / 0.1);
+    pointer-events: none;
+  }
+  
+  /* Professional Drop Zone Styling */
+  .drop-zone {
+    border: 2px dashed hsl(var(--primary) / 0.5);
+    background: hsl(var(--primary) / 0.05);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .drop-zone.active {
+    border-color: hsl(var(--primary));
+    background: hsl(var(--primary) / 0.1);
+    box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
+  }
+  
+  /* Track Label Styling */
+  .track-label {
+    @apply text-xs font-medium text-muted-foreground;
+    letter-spacing: 0.05em;
+  }
+  
+  /* Professional Playhead Triangle */
+  .playhead-triangle {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid hsl(var(--primary));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+  
+  /* Professional Zoom Controls */
+  .zoom-controls {
+    backdrop-filter: blur(8px);
+    background: hsl(var(--background) / 0.9);
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Enhanced Resize Handle Visibility */
+  .cue-block .resize-handle {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+  .cue-block:hover .resize-handle,
+  .cue-block.selected .resize-handle,
+  .cue-block.multi-selected .resize-handle {
+    opacity: 1;
+  }
+  
+  /* Track Headers */
+  .track-header {
+    background: hsl(var(--muted) / 0.3);
+    border-right: 1px solid hsl(var(--border));
+  }
+  
+  /* Audio Waveform Track Styling */
+  .audio-track {
+    background: hsl(var(--slate-900) / 0.1);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  
+  /* Professional Cursor States */
+  .cursor-grab {
+    cursor: grab;
+  }
+  
+  .cursor-grabbing {
+    cursor: grabbing;
+  }
+  
+  .cursor-crosshair {
+    cursor: crosshair;
+  }
+  
+  /* Smooth Animations */
+  .cue-block,
+  .track-label,
+  .resize-handle,
+  .drop-zone {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Professional Scrollbar */
+  .timeline-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .timeline-scroll::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.2);
+    border-radius: 4px;
+  }
+  
+  .timeline-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.4);
+    border-radius: 4px;
+  }
+  
+  .timeline-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.6);
+  }
+}
+
+
+.video-controls {
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%);
+}
+
+/* Enhanced Waveform Styles */
+.cue-block svg {
+  transition: opacity 0.2s ease;
+}
+
+.cue-block:hover svg {
+  opacity: 0.95;
+}
+
+/* Playhead Styles */
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: hsl(var(--primary));
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 0 4px hsla(var(--primary) / 0.5);
+}
+
+/* Ramp Cue Specific Styles */
+.ramp-cue {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timeline-track {
+  border-top: 1px solid hsl(var(--border));
+}
+
+.drop-zone {
+  @apply border-2 border-dashed border-muted-foreground/25 rounded-lg;
+}
+
+.drop-zone.drag-over {
+  @apply border-primary bg-primary/5;
+}
+/* Vibration animation for the word "feeling" */
+@keyframes h-letter-vibrate {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-1px, 1px); }
+  20% { transform: translate(1px, -1px); }
+  30% { transform: translate(-1.5px, 1.5px); }
+  40% { transform: translate(1.5px, -1.5px); }
+  50% { transform: translate(-2px, 2px); }
+  60% { transform: translate(2px, -2px); }
+  70% { transform: translate(-1.5px, 1.5px); }
+  80% { transform: translate(1px, -1px); }
+  90% { transform: translate(-0.5px, 0.5px); }
+}
+
+.h-letter-vibrate {
+  animation: h-letter-vibrate 0.15s linear infinite;
+  display: inline-block;
+}
