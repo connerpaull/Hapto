@@ -1,8 +1,7 @@
-
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Upload, Download, Volume2 } from 'lucide-react'
+import { Upload, Download, Volume2, X } from 'lucide-react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import HaptoLogo from './hapto-logo'
@@ -15,6 +14,7 @@ import { HapticCue, CueType, StaticHapticCue, RampHapticCue, isRampCue, ExportCu
 import { AudioWaveformData, extractAudioFromVideo, AudioExtractionProgress } from '../lib/audio-processor'
 
 export default function HaptoEditor() {
+  // --- Your existing state and refs ---
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [videoUrl, setVideoUrl] = useState<string>('')
   const [cues, setCues] = useState<HapticCue[]>([])
@@ -31,6 +31,27 @@ export default function HaptoEditor() {
   const [audioExtractionProgress, setAudioExtractionProgress] = useState<AudioExtractionProgress | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
+  // --- NEW: Modal state for Feel Haptics LIVE ---
+  const [isLiveModalOpen, setIsLiveModalOpen] = useState(false)
+  const openLiveModal = () => setIsLiveModalOpen(true)
+  const closeLiveModal = () => setIsLiveModalOpen(false)
+
+  const modalOverlayRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (modalOverlayRef.current && e.target === modalOverlayRef.current) {
+        closeLiveModal()
+      }
+    }
+    if (isLiveModalOpen) {
+      document.addEventListener('mousedown', onClickOutside)
+    } else {
+      document.removeEventListener('mousedown', onClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [isLiveModalOpen])
+
+  // --- Your existing callbacks/handlers (no changes) ---
   const handleVideoUpload = useCallback(async (file: File) => {
     setVideoFile(file)
     const url = URL.createObjectURL(file)
@@ -40,7 +61,6 @@ export default function HaptoEditor() {
     setAudioWaveformData(null)
     setAudioExtractionProgress(null)
     
-    // Extract audio waveform data in the background
     try {
       const audioData = await extractAudioFromVideo(file, (progress) => {
         setAudioExtractionProgress(progress)
@@ -54,14 +74,12 @@ export default function HaptoEditor() {
         status: 'error',
         message: 'Failed to extract audio waveform'
       })
-      // Clear error after 3 seconds
       setTimeout(() => setAudioExtractionProgress(null), 3000)
     }
   }, [])
 
   const handleVideoLoad = useCallback((video: HTMLVideoElement) => {
     setDuration(video.duration)
-    // Auto-detect frame rate (simplified detection)
     const detectedFrameRate = video.videoWidth > 1920 ? 60 : video.videoWidth > 1280 ? 30 : 24
     setFrameRate(detectedFrameRate)
   }, [])
@@ -71,7 +89,6 @@ export default function HaptoEditor() {
   }, [])
 
   const handleAddCue = useCallback((type: CueType, startTime: number, targetTrack?: number) => {
-    // Find the best available track if not specified
     const findAvailableTrack = (time: number, preferredTrack: number = 0): number => {
       for (let track = preferredTrack; track < 8; track++) {
         const hasConflict = cues.some(cue => 
@@ -81,13 +98,12 @@ export default function HaptoEditor() {
         )
         if (!hasConflict) return track
       }
-      return preferredTrack // Fallback to preferred track even if occupied
+      return preferredTrack
     }
 
     const track = targetTrack !== undefined ? targetTrack : findAvailableTrack(startTime)
 
     if (type === 'ramp_up' || type === 'ramp_down') {
-      // Create ramp cue with default values
       const rampDefaults = type === 'ramp_up' 
         ? { 
             intensity_start: 0.1, 
@@ -106,14 +122,13 @@ export default function HaptoEditor() {
         id: Date.now().toString(),
         type,
         startTime,
-        duration: 2.0, // Longer default duration for ramps
+        duration: 2.0,
         track,
         ...rampDefaults
       }
       
       setCues(prev => [...prev, newRampCue])
     } else {
-      // Create static cue (backward compatible)
       const newStaticCue: StaticHapticCue = {
         id: Date.now().toString(),
         type,
@@ -147,7 +162,6 @@ export default function HaptoEditor() {
     }
   }, [selectedCue])
 
-  // Multi-selection handlers
   const handleCueSelect = useCallback((cue: HapticCue | null, ctrlKey: boolean = false) => {
     if (!cue) {
       setSelectedCue(null)
@@ -159,7 +173,6 @@ export default function HaptoEditor() {
     }
 
     if (ctrlKey) {
-      // Multi-select with Ctrl/Cmd
       setSelectionState(prev => {
         const newSelectedIds = new Set(prev.selectedCueIds)
         if (newSelectedIds.has(cue.id)) {
@@ -175,7 +188,6 @@ export default function HaptoEditor() {
         }
       })
     } else {
-      // Single select
       setSelectedCue(cue)
       setSelectionState(prev => ({
         ...prev,
@@ -200,13 +212,11 @@ export default function HaptoEditor() {
     const selectedIds = new Set<string>()
     
     cues.forEach(cue => {
-      // Calculate cue position on timeline (this is simplified - the actual Timeline component will provide better logic)
       const cueLeft = (cue.startTime / duration) * timelineRect.width
-      const cueTop = cue.track * 36 + 40 // Based on track height
+      const cueTop = cue.track * 36 + 40
       const cueWidth = (cue.duration / duration) * timelineRect.width
       const cueHeight = 32
 
-      // Check if cue intersects with marquee rectangle
       const cueRect = {
         left: cueLeft,
         top: cueTop,
@@ -239,7 +249,6 @@ export default function HaptoEditor() {
     }
   }, [cues, duration])
 
-  // Keyboard event handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -292,16 +301,13 @@ export default function HaptoEditor() {
     }
 
     try {
-      // Dynamic import for JSZip
       const JSZip = (await import('jszip')).default
       const zip = new JSZip()
 
-      // Add files to zip
       zip.file(videoFile.name, videoFile)
       zip.file('haptics.json', JSON.stringify(hapticData, null, 2))
       zip.file('metadata.json', JSON.stringify(metadata, null, 2))
 
-      // Generate and download
       const content = await zip.generateAsync({ type: 'blob' })
       const url = URL.createObjectURL(content)
       const link = document.createElement('a')
@@ -316,21 +322,33 @@ export default function HaptoEditor() {
     }
   }, [videoFile, cues, duration])
 
+  // --- JSX return with new button and modal added ---
   return (
     <div className="min-h-screen bg-background text-foreground">
 
-       {/* Tagline - Centered and Above Header */}
-    <div className="w-full text-center py-8">
-      <span className="text-4xl md:text-5xl font-extrabold text-white select-none">
-        Give your videos some <span className="h-letter-vibrate text-white">feeling</span>
-      </span>
-    </div>
+      {/* Tagline - Centered and Above Header */}
+      <div className="w-full text-center py-8">
+        <span className="text-4xl md:text-5xl font-extrabold text-white select-none">
+          Give your videos some <span className="h-letter-vibrate text-white">feeling</span>
+        </span>
+      </div>
+
+      {/* NEW: Feel Haptics LIVE button, centered below tagline */}
+      <div className="flex justify-center mb-6">
+        <Button
+          variant="default"
+          size="lg"
+          onClick={openLiveModal}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold tracking-wide shadow-lg"
+        >
+          Feel Haptics LIVE
+        </Button>
+      </div>
 
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border">
         <HaptoLogo />
         <div className="flex items-center gap-3">
-          {/* Audio extraction progress */}
           {audioExtractionProgress && (
             <div className="flex items-center gap-2">
               <Badge variant={audioExtractionProgress.status === 'error' ? 'destructive' : 'secondary'}>
@@ -346,8 +364,6 @@ export default function HaptoEditor() {
               )}
             </div>
           )}
-          
-
           
           <Button
             variant="outline"
@@ -373,12 +389,9 @@ export default function HaptoEditor() {
         <VideoUpload onVideoUpload={handleVideoUpload} />
       ) : (
         <div className="flex h-[calc(100vh-73px)]">
-          {/* Cue Library */}
           <CueLibrary onAddCue={handleAddCue} currentTime={currentTime} />
 
-          {/* Main Workspace */}
           <div className="flex-1 flex flex-col">
-            {/* Video Player */}
             <div className="h-1/2 bg-card border-b border-border">
               <VideoPlayer
                 ref={videoRef}
@@ -398,7 +411,6 @@ export default function HaptoEditor() {
               />
             </div>
 
-            {/* Timeline */}
             <div className="h-1/2">
               <Timeline
                 duration={duration}
@@ -422,7 +434,6 @@ export default function HaptoEditor() {
             </div>
           </div>
 
-          {/* Adjustments Panel */}
           {selectedCue && (
             <AdjustmentsPanel
               cue={selectedCue}
@@ -432,6 +443,40 @@ export default function HaptoEditor() {
           )}
         </div>
       )}
+
+      {/* NEW: Modal for Feel Haptics LIVE */}
+      {isLiveModalOpen && (
+        <div
+          ref={modalOverlayRef}
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+        >
+          <div className="bg-background rounded-lg max-w-md w-full p-6 relative">
+            <button
+              onClick={closeLiveModal}
+              className="absolute top-3 right-3 text-muted-foreground hover:text-white"
+              aria-label="Close modal"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-white">Feel Haptics LIVE</h2>
+            <p className="mb-4 text-white">
+              Connect your iPhone running the Hapto Player app to your computer and feel the haptics you've added to your video in real time.
+            </p>
+            <p className="mb-4 text-white">
+              Download the Hapto Player app on your iPhone to get started.
+            </p>
+            <a
+              href="https://apps.apple.com/app/hapto-player/id123456789"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded"
+            >
+              Download Hapto Player
+            </a>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
